@@ -1,0 +1,69 @@
+/*
+* Maria Vazhaeparambil
+* January 28, 2019
+*
+* Collection of functions used to implement a user friendly fibonacci program.
+*
+* fibo      - recursively finds the first n numbers of the fibonacci 
+* userFibo  - asks the user for an input for the fibonacci function
+* check     - only runs fibonacci if the user's input is a nonnegative integer
+* fibonacci - makes sure the program only runs if the input is valid
+* ask       - asks the user for their input
+* fib       - runs the whole fibonacci program
+*/
+
+/*
+* Iteratively finds the first n numbers of the fibonacci 
+* sequence, with n being the value inputted by the user.
+* The input must be a nonnegative integer value.
+*/
+(deffunction fibo (?num)  
+   (bind ?ans (create$))                   ; creates a list to return
+   (bind ?first 1)                         ; creates a variable to keep track of the current value
+   (bind ?second 1)                        ; creates a variable to keep track of the next value 
+   (for (bind ?i 1) (<= ?i ?num) (++ ?i)   
+      (bind ?ans (insert$ ?ans ?i ?first)) ; adds the current value to the list
+      (bind ?second (+ ?first ?second))    ; updates the second value to become the previous two numbers added together
+      (bind ?first (- ?second ?first)))    ; updates the first value to be the next value
+   (return ?ans)
+)
+
+/*
+* Checks whether the user's input is a nonnegative integer value.
+*/
+(deffunction check (?num)
+   (if (not (numberp ?num)) then (bind ?ret FALSE)         ; sets return value to false if the input is not a number
+    elif (< ?num 0) then (bind ?ret FALSE)                 ; sets return value to false if the number is negative
+    elif (<> (integer ?num) ?num) then (bind ?ret FALSE)   ; sets return value to false if the number is not an integer
+    else (bind ?ret TRUE))                                 ; otherwise sets return value to true                              
+   (return ?ret)
+)
+
+/*
+* Runs the fibonacci function if the user's input is valid, otherwise returns false.
+*/
+(deffunction fibonacci (?num)
+   (if (not (check ?num)) then (bind ?ans FALSE) ; if the input is invalid returns false
+    else (bind ?ans (fibo ?num)))                ; otherwise returns the list of fibonacci numbers
+   (return ?ans)
+)
+
+/*
+* Asks the user for input and return a token.
+*/
+(deffunction ask (?arg)
+   (print ?arg)
+   (return (read))
+)
+
+/*
+* Prompts the user for the number to input in the fibonacci function.
+* If their input is valid, prints a list of the first n numbers of the function, with n being the user input.
+* Otherwise, prints an error statement.
+*/
+(deffunction fib ()
+   (bind ?num (ask "Please input a nonnegative integer. "))              ; asks for a user input  
+   (bind ?ret (findFibo ?num))                                           
+   (if (not (listp ?ret)) then (bind ?ret "Not a nonnegative integer.")) ; prints error statement since the input was invalid
+   (return ?ret)                                                         ; otherwise prints the list of fibonacci numbers
+)

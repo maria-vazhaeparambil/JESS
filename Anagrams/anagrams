@@ -1,0 +1,113 @@
+/*
+* Maria Vazhaeparambil
+* February 25, 2019
+*
+* Collection of functions used to implement a user friendly anagram.
+*
+* assertLetter - asserts a letter into a position
+* assertList   - asserts every letter in a list of letters
+* slice$       - turns a string into a list of its characters
+* createRule   - creates a rule for the inputted string based on its length
+* userInput    - asks the user for a word and processes it
+* validate     - checks to make sure it is a string which has a proper length
+*/
+
+(clear)
+(batch utilities.clp)
+
+(defglobal ?*ASC_SPACE* = 32)           ; the ascii character value of a space or the difference 
+(defglobal ?*CRASH_LENGTH* = 10)        ; the maximum length of a string that can be processed
+
+(deftemplate Letter (slot c) (slot p))  ; template for asserting a letter - needs a letter and position
+
+/*
+* Asserts the inputted letter. The first parameter represents the letter being asserted 
+* and the second parameter is the position it will inputted into.
+*/
+(deffunction assertLetter (?c ?p)
+   (assert (Letter (c ?c) (p ?p)))      ; asserts the given letter into the given position
+   (return)
+)
+
+/*
+* Calls the assertLetter function on every element of a list of letters.
+* Supplies the letter with a position in the anagram.
+*/
+(deffunction assertList (?ls)
+   (for (bind ?i 1) (<= ?i (length$ ?ls)) (++ ?i)  ; iterates through all the characters
+      (assertLetter (nth$ ?i ?ls) ?i)              ; asserts every letter in the list
+   )
+   (return)
+)
+
+/*
+* Converts the user's input into a list of all its characters.
+* The input must be a string.
+*/
+(deffunction slice$ (?str)                             
+   (bind ?ret (create$))                               ; creates a list for the output
+   (for (bind ?i 1) (<= ?i (str-length ?str)) (++ ?i)  ; iterates through all the characters
+      (bind ?curr (sub-string ?i ?i ?str))             ; gets the current character
+      (bind ?len (length$ ?ret))                       ; finds the length of the list or the position to insert the character
+      (if (not (= (asc ?curr) ?*ASC_SPACE*)) then      ; makes sure that whitespace is not included
+         (bind ?ret (insert$ ?ret (++ ?len) ?curr))    ; adds the character into the list
+      )
+   )
+   (return ?ret)
+)
+
+/*
+* Takes the length of the inputted word as a parameter.
+* Creates a string format for a rule that accepts an anagram of any length
+* that has the same template as the following example for two letters:
+*    (defrule anagram (Letter (c ?l1) (p ?p1)) (Letter (c ?l2) (p ?p2 &~?p1)) => (printout t ?l1 ?l2  " "))
+*/
+(deffunction createRule (?num)
+   (bind ?rule "(defrule anagram")                                   ; creates a rule in a string
+   (for (bind ?i 1) (<= ?i ?num) (++ ?i)                             
+      (bind ?rule (str-cat ?rule " (Letter (c ?c" ?i ") (p ?p" ?i))  ; adds the next letter and its position to the string
+      (for (bind ?j 1) (< ?j ?i) (++ ?j)        
+         (bind ?rule (str-cat ?rule " &~?p" ?j))                     ; sets the restriction that the letter can not be in any previous positions
+      )    
+      (bind ?rule (str-cat ?rule "))"))                              ; adds parentheses for format
+   )   
+   (bind ?rule (str-cat ?rule " => (printout t"))                    ; formats the rule properly with a print statement                   
+   (for (bind ?i 1) (<= ?i ?num) (++ ?i) 
+      (bind ?rule (str-cat ?rule " ?c" ?i))                          ; inserts print statement in rule for every letter in the anagram
+   )  
+   (bind ?rule (str-cat ?rule " \" \"))"))                           ; adds quotation marks for format
+   (return ?rule)                                                    ; returns a properly formatted rule that is a string
+) 
+
+/*
+* Prompts the user for the number to input in the alphabetic histogram.
+* If their input is valid, prints the anagrams of the string.
+* Otherwise, prints an error statement.
+*/
+(deffunction userInput()
+   (reset)                                              ; clears the current list of facts 
+   (bind ?inp (ask "Please enter a word in quotes: "))  ; asks the user for a string word to process
+   (if (validate ?inp) then                             ; checks if it is able to be processed
+      (bind ?ls (slice$ ?inp))                          ; turns the string into a list of letters
+      (assertList ?ls)                                  ; asserts all the letters in the string
+      (build (createRule (length$ ?ls)))                ; builds the string that contains the rule
+      (printout t (run) crlf)                           ; runs the rule and prints out all anagrams
+   )
+   (return)                                                                                    
+)
+
+/*
+* Checks whether the user's input is a string with a length less than the crash length.
+*/
+(deffunction validate(?str)
+   (bind ?ret FALSE)                                           ; default return statement
+   (if (stringp ?str) then                                     ; checks if the input is a string
+      (if (> (length$ (slice$ ?str)) ?*CRASH_LENGTH*)  then    ; checks if the length is greater than the crash length
+         (printline "Your string is too long to process.")     ; prints an error statement for a string that is too long               
+       else 
+         (bind ?ret TRUE))                                     ; otherwise, the string is valid so returns true
+   else
+      (printline "Your input is not a string.")                ; prints an error statement since the input is not a string
+   )
+   (return ?ret)
+)  

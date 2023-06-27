@@ -1,0 +1,95 @@
+/*
+* Maria Vazhaeparambil
+* February 7, 2019
+*
+* Collection of functions used to implement a user friendly alphabetic histogram.
+*
+* slice$     - turns a string into a list of its characters
+* findList   - determines which characters are in the string using its ascii value
+* printChart - prints a chart of the number of each letter of the alphabt
+* userInput  - asks the user for a string input to process
+*
+*/
+
+(batch utilities.clp)
+(batch asciiToChar.clp)
+
+(defglobal ?*ASC_LENGTH* = 256)  ; the number of ascii characters
+(defglobal ?*ASC_LOWERA* = 65)   ; the ascii character value for a lowercase a
+(defglobal ?*ASC_LOWERZ* = 90)   ; the ascii character value for a lowercase z
+(defglobal ?*ASC_DIFF* = 32)     ; the ascii character value of a space or the difference between upper and lower case
+
+/*
+* Converts the user's input into a list of all its characters.
+* The input must be a string.
+*/
+(deffunction slice$ (?str)
+   (if (stringp ?str) then                                ; makes sure that the input is a string
+      (bind ?ret (create$))                               ; creates a list for the output
+      (for (bind ?i 1) (<= ?i (str-length ?str)) (++ ?i)  ; iterates through all the characters
+         (bind ?curr (sub-string ?i ?i ?str))             ; gets the current character
+         (bind ?len (length$ ?ret))                       ; finds the length of the list or the position to insert the character
+         (if (not (= (asc ?curr) ?*ASC_DIFF*)) then       ; makes sure that whitespace is not included
+            (bind ?ret (insert$ ?ret (++ ?len) ?curr))    ; adds the character into the list
+         )
+      )
+    else (bind ?ret FALSE)                                ; return value is false if the input is not a string
+   )
+   (return ?ret)
+)
+
+/*
+* Uses the list of characters to create a list that categorizes each of them by character.
+* The index of the list corresponds to the characters' ascii value.
+*/
+(deffunction findList (?str)
+   (bind ?ls (slice$ ?str))                                  ; retrieves the list of characters                                  
+   (bind ?data (create$))                                    ; creates a new list to store the count
+   (if (not (eq ?ls FALSE)) then                             ; checks to make sure the input was a string
+      (for (bind ?i 1) (<= ?i ?*ASC_LENGTH*) (++ ?i) 
+         (bind ?data (insert$ ?data 1 0))                    ; creates 256 spots for all the different characters
+      )
+      (while (> (length$ ?ls) 0)                             ; iterates through every character in the list
+         (bind ?pos (asc (nth$ 1 ?ls)))                      ; finds the position to add in the list based on ascii value
+         (bind ?curr (nth$ ?pos ?data))                      ; finds the current value in that location
+         (bind ?data (replace$ ?data ?pos ?pos (++ ?curr)))  ; increments the number in the location by one
+         (bind ?ls (delete$ ?ls 1 1))                        ; deletes that character from the list
+      )
+   )
+   (return ?data)
+)
+
+/*
+* Prints the number of occurences of each alphabet from the list containing the number of each character into a chart.
+* Accounts for all uppercase letters as if they were lowercase letters.
+*/
+(deffunction printChart (?str)
+   (bind ?ans (findList ?str))                                                                ; retrieves the list containing the number of occurences of every character
+   (for (bind ?i (+ ?*ASC_LOWERA* ?*ASC_DIFF*)) (<= ?i (+ ?*ASC_LOWERZ* ?*ASC_DIFF*)) (++ ?i) ; iterates through all the spots correlating to the upper case letters
+      (bind ?next (- ?i ?*ASC_DIFF*))                                                         ; finds the position of its lower case letter
+      (bind ?curr (nth$ ?next ?ans))                                                          ; finds the number currently at the position of the lower case letter
+      (bind ?prev (nth$ ?i ?ans))                                                             ; finds the number currently at the position of the upper case letter
+      (bind ?ans (replace$ ?ans ?next ?next (+ ?curr ?prev)))                                 ; adds the two and replaces the number in the lower case position
+   )
+   (for (bind ?i ?*ASC_LOWERA*) (<= ?i ?*ASC_LOWERZ*) (++ ?i)                                 ; iterates through all the spots correlating to the lower case letters
+      (print (asciiToChar ?i))                                                                ; prints the character the position represents
+      (print " | ")                                   
+      (printline (nth$ ?i ?ans))                                                              ; prints the number at the position which accounts for lower and upper case
+   )
+   (return)
+)
+
+/*
+* Prompts the user for the number to input in the alphabetic histogram.
+* If their input is valid, prints a chart of how many instances of each letter of the alphabet.
+* Otherwise, prints an error statement.
+*/
+(deffunction userInput()
+   (bind ?str (ask "Please input a string: "))   ; asks the user for a string input
+   (if (stringp ?str) then                       ; checks if the input is a string               
+      (printChart ?str)                          ; prints the chart for all the letters 
+    else
+      (printline "Your input is not a string.")  ; sets the output to the error statement as a default
+   )
+   (return)                                                                                    
+)

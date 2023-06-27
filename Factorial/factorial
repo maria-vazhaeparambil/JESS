@@ -1,0 +1,61 @@
+/*
+* Maria Vazhaeparambil
+* January 27, 2019
+*
+* Collection of functions used to implement a user friendly factorial program.
+*
+* fact     - recursively finds the factorial of a number
+* userFact - asks the user for an input for the factorial function
+* check    - only runs factorial if the user's input is a nonnegative integer
+* ask      - asks the user for their input
+*/
+
+(batch utilities.clp)
+
+/*
+* Uses recursion to find the factorial of a given input. 
+* The input must be a nonnegative integer value.
+*/
+(deffunction fact (?num)
+   (
+    if(= ?num 0) then (bind ?num 1)            ; checks if the number is 0 (base case)
+    else (bind ?num (* ?num (fact (-- ?num)))) ; otherwise recursively calculates factorial by reducing the current value by 1 (reduction step)
+   )  
+   (return ?num)
+)
+
+/*
+* Prompts the user for the number to input in the factorial function.
+* If the number is not a nonnegative integer or is greater than 20, prints an error statement.
+*/
+(deffunction userFact ()
+   (bind ?num (ask "Please input a nonnegative integer that is less than 20. ")) ; asks for a user input  
+   (
+    if (and (check ?num) (<= ?num 20)) then (bind ?ans (fact ?num))              ; checks if input is valid
+    elif (check ?num) then (bind ?ans "Number is not between 0 and 20.")         ; checks if the integer is not computable 
+    else (bind ?ans "Not a nonnegative integer.")
+   )
+   (return ?ans)
+)
+
+/*
+* Checks whether the user's input is a nonnegative integer value.
+*/
+(deffunction check (?num)
+   (
+    if (not (numberp ?num)) then (bind ?ret FALSE)         ; sets return value to false if the input is not a number
+    elif (< ?num 0) then (bind ?ret FALSE)                 ; sets return value to false if the number is negative
+    elif (<> (integer ?num) ?num) then (bind ?ret FALSE)   ; sets return value to false if the number is not an integer
+    else (bind ?ret TRUE)                                  ; otherwise sets return value to true
+   )                                 
+   (return ?ret)
+)
+
+/*
+* Asks the user for input and return a token.
+*/
+(deffunction ask (?arg)
+   (print ?arg)
+   (return (read))
+)
+

@@ -1,0 +1,245 @@
+/*
+* Maria Vazhaeparambil
+* April 23, 2019
+*
+* Collection of functions used to implement a user friendly way to recommend books
+* utilizing backwards chaining.
+* 
+* Prompts the user with a series of questions to determine a short list
+* of possible books that they might be interested in.
+*/
+
+(clear)
+
+/**
+* Sets up backward chaining for each of the characteristics pertaining to genre.
+*/ 
+(do-backward-chaining fiction)
+(do-backward-chaining nonfiction)
+(do-backward-chaining biography)
+(do-backward-chaining autobiography)
+(do-backward-chaining selfhelp)
+(do-backward-chaining fantasy)
+(do-backward-chaining science-fiction)
+(do-backward-chaining hisctorical-fiction)
+(do-backward-chaining novel)
+(do-backward-chaining thriller)
+(do-backward-chaining sports)
+(do-backward-chaining romance)
+(do-backward-chaining humor)
+(do-backward-chaining modern)
+(do-backward-chaining politics)
+(do-backward-chaining economics)
+(do-backward-chaining criticism)
+(do-backward-chaining spiritual)
+
+
+(defglobal ?*DIFFNUM* = 48)                ; difference between the ASCII value of a single-digit number and the number
+(defglobal ?*BDLENGTH* = 7)                ; the number of characteristics of data for each book
+(defglobal ?*TOTALRAND* = 65536)           ; the highest number that the random function can return
+(defglobal ?*listName* = (create$))        ; list of possible book names
+(defglobal ?*listNum* = (create$))         ; list of ratings corresponding with the book names
+(defglobal ?*gender* = nil)                ; gender of the user
+(defglobal ?*maxpages* = nil)              ; the maximum pages the user is willing to read
+
+
+(defglobal ?*genresF* = (create$ "fantasy" "science-fiction" "hisctorical-fiction" "novel" "thriller" "romance" "humor"))                                 ; list of fiction genres
+(defglobal ?*genresNF* = (create$ "biography" "autobiography" "selfhelp" "sports" "humor" "modern" "political" "economics" "criticism" "spiritual"))      ; list of nonfiction genres
+
+/**
+* List of data for each book in order of title and author, pages, probability of being a girl, probability of being chosen, rating, fiction or nonfiction, and genre.
+*/
+(batch bookdata.clp)
+
+/*
+* Dynamically creates a list of rules based on whether they are considered fiction or nonfiction.
+* Builds the string format for the rule based on genre that has the same template as the following example of a fantasy fiction book: 
+*    (defrule need-genre (need fantasy ?) (fiction yes) => (bind ?ret (ask "Do you like genre books? ")) (assert (genre ?ret)))
+*/
+(deffunction createRules () 
+   (foreach ?x ?*genresF*                                                                                                                                     
+      (build (str-cat "(defrule need-" ?x " (need-" ?x " ?) (fiction yes) => (bind ?ret (ask \"Do you prefer " ?x " books? \" )) (assert (" ?x " ?ret)))"))    
+   ) 
+   (foreach ?x ?*genresNF*                                                                                                                                    
+      (build (str-cat "(defrule need-" ?x " (need-" ?x " ?) (nonfiction yes) => (bind ?ret (ask \"Do you prefer " ?x " books? \" )) (assert (" ?x " ?ret)))"))    
+   )
+   (return)
+)
+
+
+/*
+* Asks the user if they prefer fiction books and asserts the answer.
+*/
+(defrule need-fiction
+   (need-fiction ?)
+   => 
+   (bind ?ret (ask "Do you prefer fiction books? "))
+   (assert (fiction ?ret))
+   (if (eq ?ret yes) then                             ; asserts the opposite for the nonfiction fact
+      (assert (nonfiction no))
+    else
+      (assert (nonfiction yes))
+   )
+)
+
+/*
+* Uses data points from the data table to dynamically create a list of rules for each book.
+* Creates a string format for a rule for all books in the database that has the same template as the following example for "Why Not Me by Mindy Kaling":
+*    (defrule whyNotMe (test (eq (>= (pages) 240) TRUE)) (test (eq (gender 10 14) TRUE))(test (eq  (prob 14 16) TRUE)) (fiction no) (autobiography yes) => (put 3.90 "Why Not Me? by Mindy Kaling"))
+*/
+(deffunction books ()
+   (for (bind ?i 0) (< ?i (/ (length$ ?*data*) ?*BDLENGTH*)) (++ ?i) 
+      (build (str-cat "(defrule book" ?i "  
+                       (test (eq (>= (pages) " (nth$ (+ (* ?*BDLENGTH* ?i) 2) ?*data*) ") TRUE)) 
+                       (test (eq (gender " (nth$ (+ (* ?*BDLENGTH* ?i) 3) ?*data*) ") TRUE)) 
+                       (test (eq (prob " (nth$ (+ (* ?*BDLENGTH* ?i) 4) ?*data*) ") TRUE)) (" 
+                       (nth$ (+ (* ?*BDLENGTH* ?i) 6) ?*data*) " yes) (" 
+                       (nth$ (+ (* ?*BDLENGTH* ?i) ?*BDLENGTH*) ?*data*) " yes ) => 
+                       (put " (nth$ (+ (* ?*BDLENGTH* ?i) 5) ?*data*) " \"" (nth$ (+ (* ?*BDLENGTH* ?i) 1) ?*data*) "\"))"))
+   )
+   (return)
+)
+
+/*
+* Starts the recommendation program.
+*/
+(deffunction play ()
+   (createRules)
+   (books)
+   (bind ?ans yes)
+   (while (= ?ans yes) then
+      (reset)
+      (run)
+      (if (<> (length$ ?*listName*) 0) then                                             ; checks to make sure there is at least one book found
+         (printout t "Recommended Books:" crlf)
+       else                                                                             ; otherwise prints statement saying that no match was found
+         (printout t "Sorry could not fine a book matching your interests." crlf)
+      )
+      (for (bind ?i 1) (<= ?i (length$ ?*listName*)) (++ ?i)                            ; prints out the list of books in a numbered list format
+         (printout t (str-cat ?i ". " (nth$ ?i ?*listName*)) crlf)
+      )
+      (bind ?ans (ask "Try again? "))                                                   ; asks the user if they want to run again
+   )
+   (printout t "Thank you for participating!" crlf)
+   (return)
+)
+
+
+/*
+* Ask the user for input and return a token.
+* Checks to make sure that it is a valid input.
+* If the user is unsure of their answer, assumes that the answer is yes.
+*/
+(deffunction ask (?arg)
+   (bind ?ans (valid ?arg))
+   (while (eq ?ans FALSE)
+      (printout t "Sorry that was not a valid response. Try again." crlf)
+      (bind ?ans (valid ?arg))
+   )
+   (return ?ans)
+)
+
+/*
+* Ask the user for input and return a token.
+* Checks to make sure that it is a valid input.
+* If the user is unsure of their answer, assumes that the answer is yes.
+*/
+(deffunction valid (?arg)
+   (printout t ?arg)
+   (bind ?ret (lowcase (read)))
+   (if (= (sub-string 1 1 ?ret) "y") then        ; if the first letter is a 'y' or 'Y' the answer was yes
+      (bind ?ret yes)
+   
+    elif (= (sub-string 1 1 ?ret) "n") then      ; if the first letter is a 'n' or 'N' the answer was yes
+      (bind ?ret no)
+   
+    elif (= (sub-string 1 1 ?ret) "?") then      ; if the first letter is a '?' the answer was unsure but assumed to be yes
+      (bind ?ret yes)
+    else 
+      (bind ?ret FALSE)                          ; otherwise not a valid input
+   )
+   (return ?ret)
+)
+
+/*
+* Inserts the book into the list based on its rating. 
+* The first parameter is the general rating of the book out of 5.
+* The second parameter is the name of the book.
+*/
+(deffunction put (?int ?str)
+   (bind ?done FALSE)
+   (for (bind ?i 1) (<= ?i (length$ ?*listNum*)) (++ ?i)                          ; iterates through the list of book names already found
+      (if (and (> ?int (nth$ ?i ?*listNum*)) (= ?done FALSE)) then                ; if one has a lower rating than the current book being checked
+         (insert$ ?*listNum* ?i ?int)
+         (insert$ ?*listName* ?i ?str)                                            ; insert this book before it
+         (bind ?done TRUE)
+      )
+   )
+   (if (= ?done FALSE) then                                                       ; if the book was not added
+      (bind ?*listNum* (insert$ ?*listNum* (+ (length$ ?*listNum*) 1) ?int))       
+      (bind ?*listName* (insert$ ?*listName* (+ (length$ ?*listName*) 1) ?str))   ; add the book to the end of the list
+   )
+   (return)
+)
+
+/*
+* If it has not already asked for the person's gender, asks and updates the global variable.
+* Returns the gender of the user.
+*/
+(deffunction getGender ()
+   (if (and (neq ?*gender* yes) (neq ?*gender* no)) then    ; if the gender was not already found
+      (bind ?ret (ask "Are you female? "))                  ; ask the user for their gender
+      (bind ?*gender* ?ret)
+   )
+   (return ?*gender*)                                       ; return gender
+)
+
+/*
+* If it has not already asked for how many pages the person is willing to read, asks and updates
+* the gloabal variable. Return the maximum number of pages.
+*/
+(deffunction pages ()
+   (if (eq ?*maxpages* nil) then                                                                ; if the maximum number of pages was not already found
+      (printout t "What is the maximum number of pages you are willing to read? ")              ; ask the user for their maximum number of pages
+      (bind ?*maxpages* (read))
+   )
+   (if (eq (integerp ?*maxpages*) FALSE) then 
+      (printout t "Sorry that is not a valid number. Your default value will be 1000." crlf)    ; if the user's input is not valid, max is 1000
+      (bind ?*maxpages* 1000)
+   )
+   (return ?*maxpages*)                                                                         ; return the maximum number of pages
+)
+
+/*
+* Checks using a given probability with respect to gender whether a random number falls within that boundary, allowing the book to be a possibility.
+* The parameter is the probability that needs to be accounted for.
+*/
+(deffunction gender (?num)
+   (bind ?num (* ?num ?*TOTALRAND*))   
+   (bind ?prob (random))                                             
+   (if (and (= (getGender) yes) (< ?prob ?num)) then
+      (bind ?ans TRUE)
+    elif (and (= (getGender) no) (>= ?prob ?num)) then
+      (bind ?ans TRUE)
+    else
+      (bind ?ans FALSE)
+   )
+   (return ?ans)
+)
+
+/*
+* Checks using a given probability with respect to attendance whether a random number falls within that boundary, allowing the book to be a possibility.
+* The parameter is the probability that needs to be accounted for.
+*/
+(deffunction prob (?num)
+   (bind ?num (* ?num ?*TOTALRAND*))  
+   (if (< (random) ?num) then
+      (bind ?ans TRUE)
+    else
+      (bind ?ans FALSE)
+   )
+   (return ?ans)
+)
+
+(play)  ; calls the method to play the game
+

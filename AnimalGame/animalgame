@@ -1,0 +1,772 @@
+/*
+* Maria Vazhaeparambil
+* March 18, 2019
+*
+* Collection of functions used to implement a user friendly animals game
+* utilizing backwards chaining.
+* 
+* Prompts the user to with a series of questions to determine the selected animal
+* based on a set of qualificaitons that must be true.
+*/
+
+(clear)
+(reset)
+
+/**
+* Sets up backward chaining for each of the animal characteristics.
+*/ 
+(do-backward-chaining landanimal)     
+(do-backward-chaining fly)
+(do-backward-chaining water)
+(do-backward-chaining 4legs)
+(do-backward-chaining 0legs)
+(do-backward-chaining bigger)
+(do-backward-chaining farm)
+(do-backward-chaining pet)
+(do-backward-chaining warmblooded)
+(do-backward-chaining canine)
+(do-backward-chaining feline)
+(do-backward-chaining rodent)
+(do-backward-chaining blackandwhite)
+(do-backward-chaining mane)
+(do-backward-chaining trunk)
+
+
+(defglobal ?*MAX_QUESTIONS* = 20)        ; the maximum number of questions to be asked
+(defglobal ?*COUNT* = 1)                 ; the number of the question being asked
+(defglobal ?*DONE* = FALSE)              ; whether the game has been finished or not
+
+
+/**
+* Plays the 20 questions animal game.
+*/
+(deffunction play ()
+   (printout t "Please pick an animal." crlf)
+   (run)
+   (if (= ?*DONE* FALSE) then
+      (printout t "Could not find your animal." crlf)
+   )
+   (bind ?ans (ask "Play again? "))
+   (while (= ?ans yes) then
+      (reset)
+      (run)
+      (if (= ?*DONE* FALSE) then
+         (printout t "Could not find your animal." crlf)
+      )
+      (bind ?ans (ask "Play again? "))
+   )
+   (return)
+)
+
+/*
+* Ask the user for input and return a token.
+* Checks to make sure that it is a valid input.
+* If the user is unsure of their answer, assumes that the answer is yes.
+*/
+(deffunction ask (?arg)
+   (printout t ?arg)
+   (bind ?ret (lowcase (read)))
+   (if (= (sub-string 1 1 ?ret) "y") then        ; if the first letter is a 'y' or 'Y' the answer was yes
+      (bind ?ret yes)
+   
+    elif (= (sub-string 1 1 ?ret) "n") then      ; if the first letter is a 'n' or 'N' the answer was yes
+      (bind ?ret no)
+   
+    elif (= (sub-string 1 1 ?ret) "?") then      ; if the first letter is a '?' the answer was unsure but assumed to be yes
+      (bind ?ret yes)
+    else 
+      (bind ?ret FALSE)                          ; otherwise not a valid input
+   )
+   (return ?ret)
+)
+
+/**
+* Prints the number of the question and checks to make sure that number has not exceeded the max number of questions.
+*/ 
+(deffunction printNum ()
+   (if (>= ?*COUNT* ?*MAX_QUESTIONS*) then
+      (printout t "Could not find your animal in 20 questions.")
+      (halt)
+   )
+   (printout t ?*COUNT*)
+   (printout t ". ")
+   (bind ?count (++ ?*COUNT*))
+)
+
+/*
+* Definitions of the animals' characteristics that will ultimately determine whether
+* it was the selectd animal.
+*/
+
+/*
+* If the animal lives on land, is a canine, and is a pet, it is a dog.
+*/
+(defrule dog
+   (landanimal yes)
+   (canine yes)
+   (pet yes)
+   =>
+   (printout t "The animal is a dog." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives on land, is a feline, and is a pet, it is a cat.
+*/
+(defrule cat
+   (landanimal yes)
+   (feline yes)
+   (pet yes)
+   =>
+   (printout t "The animal is a cat." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives on land, is bigger than a human, is not a canine,
+* is not a feline, is not a farm animal, is not always black and white, 
+* does not have a mane, and does not have a trunk, it is a bear.
+*/
+(defrule bear
+   (landanimal yes)
+   (bigger yes)
+   (canine no)
+   (feline no)
+   (farm no)
+   (blackandwhite no)
+   (mane no)
+   (trunk no)
+   =>
+   (printout t "The animal is a bear." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives on land, is a feline, is not a pet, and does not have a mane, it is a tiger.
+*/
+(defrule tiger
+   (landanimal yes)
+   (feline yes)
+   (pet no)
+   (mane no)
+   =>
+   (printout t "The animal is a tiger." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+) 
+
+/*
+* If the animal flies and it is a pet, it is a bird.
+*/
+(defrule bird
+   (fly yes)
+   (pet yes)
+   =>
+   (printout t "The animal is a bird." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives on land, is a feline, is not a pet, and has a mane it is a lion.
+*/
+(defrule lion
+   (landanimal yes)
+   (feline yes)
+   (mane yes)
+   =>
+   (printout t "The animal is a lion." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives in water and is a pet, it is a bird.
+*/
+(defrule fish
+   (water yes)
+   (pet yes)
+   =>
+   (printout t "The animal is a fish." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives on land, is a farm animal, and has a mane, it is a horse.
+*/
+(defrule horse
+   (landanimal yes)
+   (farm yes)
+   (mane yes)
+   =>
+   (printout t "The animal is a horse." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives on land and has a trunk, it is an elephant.
+*/
+(defrule elephant
+   (landanimal yes)
+   (trunk yes)
+   =>
+   (printout t "The animal is a elephant." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives on land, does not have 4 legs, and is warmblooded, it is a monkey.
+*/
+(defrule monkey
+   (landanimal yes)
+   (4legs no)
+   (warmblooded yes)
+   =>
+   (printout t "The animal is a monkey." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives in water, has no legs, is warmblooded, and is not necessarily clearly
+* bigger than a human, it is a dolphin.
+*/
+(defrule dolphin
+   (water yes)
+   (0legs yes)
+   (warmblooded yes)
+   (bigger no)
+   =>
+   (printout t "The animal is a dolphin." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives on land, is bigger than a human, is always black and white, and does 
+* not have a mane, it is a panda.
+*/
+(defrule panda
+   (landanimal yes)
+   (bigger yes)
+   (blackandwhite yes)
+   (farm no)
+   (mane no)
+   =>
+   (printout t "The animal is a panda." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives on land, is bigger than a human, is always black and white, and is a
+* farm animal, it is a cow.
+*/
+(defrule cow
+   (landanimal yes)
+   (blackandwhite yes)
+   (farm yes)
+   =>
+   (printout t "The animal is a cow." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives in water, is warmblooded, and is bigger than a human, it is a whale.
+*/
+(defrule whale
+   (water yes)
+   (warmblooded yes)
+   (bigger yes)
+   =>
+   (printout t "The animal is a whale." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+/*
+* If the animal lives on land, has 4 legs, and is not warmblooded, it is a lizard.
+*/
+(defrule lizard
+   (landanimal yes)
+   (4legs yes)
+   (warmblooded no)
+   =>
+   (printout t "The animal is a lizard." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives in water, does not have 4 or 0 legs, and is coldblooded, it is a frog.
+*/
+(defrule frog 
+   (water yes)
+   (4legs no)
+   (0legs no)
+   (warmblooded no) 
+   =>
+   (printout t "The animal is a frog." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives in water, has 4 legs, and is not warmblooded, it is a turtle.
+*/
+(defrule turtle
+   (water yes)
+   (4legs yes)
+   (warmblooded no)   
+   =>
+   (printout t "The animal is a turtle." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives on land and has 0 legs, it is a snake.
+*/
+(defrule snake
+   (landanimal yes)
+   (0legs yes)
+   =>
+   (printout t "The animal is a snake." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives on land, is a pet, is not a canine, and is not a feline, it is a rabbit.
+*/
+(defrule rabbit
+   (landanimal yes)
+   (pet yes)
+   (canine no)
+   (feline no)
+   =>
+   (printout t "The animal is a rabbit." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives in water, is colblooded, and is bigger than a human, it is a shark.
+*/
+(defrule shark
+   (water yes)
+   (warmblooded no)
+   (bigger yes)
+   =>
+   (printout t "The animal is a shark." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives on land, has a mane, is not a feline, is not a farm animal,
+* and is not always black and white, it is a giraffe.
+*/
+(defrule giraffe
+   (landanimal yes)
+   (mane yes)
+   (feline no)
+   (farm no)
+   (blackandwhite no)
+   =>
+   (printout t "The animal is a giraffe." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives on land and it is a rodent, it is a rat.
+*/
+(defrule rat
+   (landanimal yes)
+   (rodent yes)
+   =>
+   (printout t "The animal is a rat." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives on land, is not bigger than a human, is black and white, is not
+* a farm animal, and does not have a mane, it is a racoon.
+*/
+(defrule raccoon
+   (landanimal yes)
+   (bigger no)
+   (blackandwhite yes)
+   (farm no)
+   (mane no)
+   =>
+   (printout t "The animal is a raccoon." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives in water and is black and white, it is a penguin.
+*/
+(defrule penguin
+   (water yes)
+   (blackandwhite yes)
+   =>
+   (printout t "The animal is a penguin." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives on land, is not warmblooded, and has neither 0 nor 4 legs,
+* it is a spider.
+*/
+(defrule spider
+   (landanimal yes) 
+   (warmblooded no)
+   (4legs no)
+   (0legs no)
+   =>
+   (printout t "The animal is a spider." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives on land, is a farm animal, and does not have 4 legs, it is a chicken.
+*/
+(defrule chicken
+   (landanimal yes)
+   (farm yes)
+   (4legs no)
+   =>
+   (printout t "The animal is a chicken." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives in water, does not have 0 legs, is warmblooded, and is not always black
+* and white, it is a duck.
+*/
+(defrule duck
+   (water yes)
+   (0legs no)
+   (warmblooded yes)
+   (blackandwhite no)
+   =>
+   (printout t "The animal is a duck." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives on land, is a farm animal, is not always black and white, is not bigger 
+* than a human, and has 4 legs, it is a pig.
+*/
+(defrule pig
+   (landanimal yes)
+   (farm yes)
+   (blackandwhite no)
+   (bigger no)
+   (4legs yes)
+   =>
+   (printout t "The animal is a pig." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives on land, is a canine, and is not a pet, it is a wolf.
+*/
+(defrule wolf
+   (landanimal yes)
+   (canine yes)
+   (pet no)
+   =>
+   (printout t "The animal is a wolf." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal flies and is not a pet, it is a bug.
+*/
+(defrule bug
+   (fly yes)
+   (pet no)
+   =>
+   (printout t "The animal is a bug." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+/*
+* If the animal lives on land, is black and white, and has a mane, it is a zebra.
+*/
+(defrule zebra
+   (landanimal yes)
+   (blackandwhite yes)
+   (mane yes)
+   =>
+   (printout t "The animal is a zebra." crlf)
+   (bind ?*DONE* TRUE)
+   (halt)
+)
+
+
+/*
+* Asks the user if the animal lives on land and asserts the user's answer.
+*/
+(defrule need-landanimal
+   (need-landanimal ?)
+   (water no)
+   => 
+   (printNum)
+   (bind ?ret (ask "Is the animal a land animal? "))
+   (if (= ?ret FALSE) then
+      (printout t "That is not a valid input." crlf)
+    else  
+      (assert (landanimal ?ret))
+   )
+)
+
+/*
+* Asks the user if the animal lives in water and asserts the user's answer.
+*/
+(defrule need-water
+   (need-water ?)
+   =>
+   (printNum)
+   (bind ?ret (ask "Can it live in water? "))
+   (if (= ?ret FALSE) then
+      (printout t "That is not a valid input." crlf)
+    else  
+      (assert (water ?ret))
+   )
+)
+
+/*
+* Asks the user if the animal flies and asserts the user's answer.
+*/
+(defrule need-fly
+   (need-fly ?)
+   (landanimal no)
+   (water no)
+   =>
+   (printNum)
+   (bind ?ret (ask "Can the animal fly? "))
+   (if (= ?ret FALSE) then
+      (printout t "That is not a valid input." crlf)
+    else  
+      (assert (fly ?ret))
+   )
+)
+
+/*
+* Asks the user if the animal has 4 legs and asserts the user's answer.
+*/
+(defrule need-4legs
+   (need-4legs ?)
+   =>
+   (printNum)
+   (bind ?ret (ask "Does the animal have 4 legs? "))
+   (if (= ?ret FALSE) then
+      (printout t "That is not a valid input." clrf)
+    else  
+      (assert (4legs ?ret))
+   )
+)
+
+/*
+* Asks the user if the animal has no legs and asserts the user's answer.
+*/
+(defrule need-0legs
+   (need-0legs ?)
+   (4legs no)
+   =>
+   (printNum)
+   (bind ?ret (ask "Does the animal have no legs? "))
+   (if (= ?ret FALSE) then
+      (printout t "That is not a valid input." crlf)
+    else  
+      (assert (0legs ?ret))
+   )
+)
+
+/*
+* Asks the user if the animal is warmblooded and asserts the user's answer.
+*/
+(defrule need-warmblooded
+   (need-warmblooded ?)
+   =>
+   (printNum)
+   (bind ?ret (ask "Is the animal warmblooded? "))
+   (if (= ?ret FALSE) then
+      (printout t "That is not a valid input." crlf)
+    else  
+      (assert (warmblooded ?ret))
+   )
+)
+
+
+/*
+* Asks the user if the animal is bigger than a human and asserts the user's answer.
+*/
+(defrule need-bigger
+   (need-bigger ?)
+   =>
+   (printNum)
+   (bind ?ret (ask "Is the animal clearly bigger than a human? "))
+   (if (= ?ret FALSE) then
+      (printout t "That is not a valid input." crlf)
+    else  
+      (assert (bigger ?ret))
+   )
+)
+
+/*
+* Asks the user if the animal is a canine and asserts the user's answer.
+*/
+(defrule need-canine
+   (need-canine ?)
+   (landanimal yes)
+   (farm no)
+   =>
+   (printNum)
+   (bind ?ret (ask "Is the animal a canine? "))
+   (if (= ?ret FALSE) then
+      (printout t "That is not a valid input." crlf)
+    else  
+      (assert (canine ?ret))
+   ) 
+)
+
+/*
+* Asks the user if the animal is a feline and asserts the user's answer.
+*/
+(defrule need-feline
+   (need-feline ?)
+   (landanimal yes)
+   (farm no)
+   (canine no)
+   =>
+   (printNum)
+   (bind ?ret (ask "Is the animal a feline? "))
+   (if (= ?ret FALSE) then
+      (printout t "That is not a valid input." crlf)
+    else  
+      (assert (feline ?ret))
+   )
+)
+
+/*
+* Asks the user if the animal is a rodent and asserts the user's answer.
+*/
+(defrule need-rodent
+   (need-rodent ?)
+   (landanimal yes)
+   (bigger no)
+   (farm no)
+   (canine no)
+   (feline no)
+   =>
+   (printNum)
+   (bind ?ret (ask "Is the animal a rodent? "))
+   (if (= ?ret FALSE) then
+      (printout t "That is not a valid input." crlf)
+    else  
+      (assert (rodent ?ret))
+   )
+)
+
+/*
+* Asks the user if the animal is a farm animal and asserts the user's answer.
+*/
+(defrule need-farm
+   (need-farm ?)
+   (landanimal yes)
+   (warmblooded yes)
+   =>
+   (printNum)
+   (bind ?ret (ask "Is the animal a farm animal? "))
+   (if (= ?ret FALSE) then
+      (printout t "That is not a valid input." crlf)
+    else  
+      (assert (farm ?ret))
+   )
+)
+
+/*
+* Asks the user if the animal is a common pet and asserts the user's answer.
+*/
+(defrule need-pet
+   (need-pet ?)
+   (landanimal yes)
+   (warmblooded yes)
+   (farm no)
+   =>
+   (printNum)
+   (bind ?ret (ask "Is the animal a common pet? "))
+   (if (= ?ret FALSE) then
+      (printout t "That is not a valid input." crlf)
+    else  
+      (assert (pet ?ret))
+   )
+)
+
+/*
+* Asks the user if the animal has a mane and asserts the user's answer.
+*/
+(defrule need-mane
+   (need-mane ?)
+   =>
+   (printNum)
+   (bind ?ret (ask "Does the animal have a mane? "))
+   (if (= ?ret FALSE) then
+      (printout t "That is not a valid input." crlf)
+    else  
+      (assert (mane ?ret))
+   )
+)
+
+/*
+* Asks the user if the animal has a trunk and asserts the user's answer.
+*/
+(defrule need-trunk
+   (need-trunk ?)
+   =>
+   (printNum)
+   (bind ?ret (ask "Does the animal have a trunk? "))
+   (if (= ?ret FALSE) then
+      (printout t "That is not a valid input." crlf)
+    else  
+      (assert (trunk ?ret))
+   )
+)
+
+/*
+* Asks the user if the animal is always black and white and asserts the user's answer.
+*/
+(defrule need-blackandwhite
+   (need-blackandwhite ?)
+   =>
+   (printNum)
+   (bind ?ret (ask "Is it a black and white animal? "))
+   (if (= ?ret FALSE) then
+      (printout t "That is not a valid input." crlf)
+    else  
+      (assert (blackandwhite ?ret))
+   )
+)
+
+(play)  ; calls the method to play the game
+
